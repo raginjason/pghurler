@@ -25,7 +25,7 @@ RUN GIT_COMMIT=$(git rev-list -1 HEAD) && \
     NOW=$(date +'%Y-%m-%d_%T') && \
     CGO_ENABLED=0 GOOS=linux go build -o pghurler -ldflags "-X github.com/raginjason/pghurler/cmd.gitVersion=$GIT_COMMIT -X github.com/raginjason/pghurler/cmd.buildTime=$NOW -X github.com/raginjason/pghurler/cmd.gitOrigin=$GIT_ORIGIN" main.go
 # "go test -v all" and "go mod tidy" is suggested to run before release
-RUN go test -v ./...
+RUN go test -v ./... -cover
 
 # Bare minimum container
 FROM scratch
