@@ -1,0 +1,21 @@
+version: "3.3"
+services:
+
+  pghurler:
+    image: pghurler:latest
+    build:
+      context: .
+      #    environment:
+      #- DB_PASS=DBAPass
+      #- DB_USER=postgres
+      #- DB_NAME=postgres
+      #- DB_HOST=db
+    depends_on:
+      - db
+    volumes:
+      - ${HOME}/dev/data:/data
+
+  db:
+    image: postgres:11
+    environment:
+      - POSTGRES_PASSWORD=DBAPass
