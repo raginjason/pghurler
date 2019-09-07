@@ -13,11 +13,20 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	buildTime  string // when the executable was built
+	gitOrigin  string // git origin URL
+	gitVersion string // git sha1 revision used to build the program
+)
+
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "pghurler",
+	Use: "pghurler",
+	Version: gitVersion + "\n" +
+		"built on " + buildTime + "\n" +
+		"from " + gitOrigin,
 	Short: "A brief description of your application",
 	Long: `A longer description that spans multiple lines and likely contains
 examples and usage of using your application. For example:
