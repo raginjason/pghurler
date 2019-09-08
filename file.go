@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 // DelimitedFile struct
@@ -11,8 +13,25 @@ type DelimitedFile struct {
 	Filepath  string
 }
 
+func parseHeader(delimiter rune, header string) ([]string, error) {
+	r := csv.NewReader(strings.NewReader(header))
+
+	record, err := r.Read()
+	/*
+		if err == io.EOF {
+			break
+		}
+	*/
+
+	if err != nil {
+		return nil, err
+	}
+
+	return record, nil
+}
+
 // NewDelimitedFile func
-func NewDelimitedFile(path string, delimiter rune, columns []string) (*DelimitedFile, error) {
+func NewDelimitedFile(path string, delimiter rune) (*DelimitedFile, error) {
 	// If no delimiter is passed, derive it from the file extension
 	if delimiter == '\x00' { // Rune zero value
 		ext := filepath.Ext(path)
