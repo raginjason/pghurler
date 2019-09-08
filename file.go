@@ -12,9 +12,9 @@ type DelimitedFile struct {
 }
 
 // NewDelimitedFile func
-func NewDelimitedFile(path string, delimiter rune) (*DelimitedFile, error) {
+func NewDelimitedFile(path string, delimiter rune, columns []string) (*DelimitedFile, error) {
 	// If no delimiter is passed, derive it from the file extension
-	if delimiter == '\x00' {
+	if delimiter == '\x00' { // Rune zero value
 		ext := filepath.Ext(path)
 		switch ext {
 		case ".csv":
