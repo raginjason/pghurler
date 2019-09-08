@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
+	"io"
 	"testing"
 )
 
@@ -53,6 +54,7 @@ func TestParseHeader(t *testing.T) {
 	}{
 		"csv":        {',', "foo,bar,baz", []string{"foo", "bar", "baz"}, nil},
 		"csv quotes": {',', `foo,"bar",baz`, []string{"foo", "bar", "baz"}, nil},
+		"empty":      {',', "", []string(nil), io.EOF},
 	}
 
 	equateErrorMessage := cmp.Comparer(func(x, y error) bool {

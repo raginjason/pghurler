@@ -17,11 +17,6 @@ func parseHeader(delimiter rune, header string) ([]string, error) {
 	r := csv.NewReader(strings.NewReader(header))
 
 	record, err := r.Read()
-	/*
-		if err == io.EOF {
-			break
-		}
-	*/
 
 	if err != nil {
 		return nil, err
