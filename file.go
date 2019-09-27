@@ -31,24 +31,35 @@ func parseHeader(delimiter rune, header string) ([]string, error) {
 	return record, nil
 }
 
+func deriveDelimiter(path string) (rune, error) {
+	var delimiter rune
+	ext := filepath.Ext(path)
+	switch ext {
+	case ".csv":
+		delimiter = ','
+	case ".tsv":
+		delimiter = '\t'
+	case ".tab":
+		delimiter = '\t'
+	case ".pipe":
+		delimiter = '|'
+	case "":
+		return 0, fmt.Errorf("no extension to derive delimiter from")
+	default:
+		return 0, fmt.Errorf("could not derive delimiter from '%s' extension", ext)
+	}
+
+	return delimiter, nil
+}
+
 // NewDelimitedFile func
 func NewDelimitedFile(conf DelimitedFileConfig) (*DelimitedFile, error) {
-	// If no delimiter is passed, derive it from the file extension
-	if conf.Delimiter == '\x00' { // Rune zero value
-		ext := filepath.Ext(conf.Filepath)
-		switch ext {
-		case ".csv":
-			conf.Delimiter = ','
-		case ".tsv":
-			conf.Delimiter = '\t'
-		case ".tab":
-			conf.Delimiter = '\t'
-		case ".pipe":
-			conf.Delimiter = '|'
-		case "":
-			return nil, fmt.Errorf("no extension to derive delimiter from")
-		default:
-			return nil, fmt.Errorf("could not derive delimiter from '%s' extension", ext)
+	// If no delimiter is passed, attempt to derive one from the file extension
+	if conf.Delimiter == 0 { // Rune zero value
+		var err error
+		conf.Delimiter, err = deriveDelimiter(conf.Filepath)
+		if err != nil {
+			return nil, err
 		}
 	}
 	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath}
