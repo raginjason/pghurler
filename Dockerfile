@@ -20,12 +20,12 @@ ENV APPNAME="${APPNAME}"
 
 # Copy rest of application in place and build
 COPY . .
+# "go test -v all" and "go mod tidy" is suggested to run before release
+RUN go test -v ./... -covermode=count -coverprofile=coverage/cover.out && go tool cover -html=coverage/cover.out -o coverage/cover.html
 RUN GIT_COMMIT=$(git rev-list -1 HEAD) && \
     GIT_ORIGIN=$(git remote get-url origin) && \
     NOW=$(date +'%Y-%m-%d_%T') && \
     CGO_ENABLED=0 GOOS=linux go build -o pghurler -ldflags "-X github.com/raginjason/pghurler/cmd.gitVersion=$GIT_COMMIT -X github.com/raginjason/pghurler/cmd.buildTime=$NOW -X github.com/raginjason/pghurler/cmd.gitOrigin=$GIT_ORIGIN" main.go
-# "go test -v all" and "go mod tidy" is suggested to run before release
-RUN go test -v ./... -cover
 
 # Bare minimum container
 FROM scratch
