@@ -87,6 +87,8 @@ func TestNewDelimitedFile(t *testing.T) {
 		"defined delim":     {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.'}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv"}, nil},
 		"derivable delim":   {DelimitedFileConfig{Filepath: "foo.csv"}, &DelimitedFile{Delimiter: ',', Filepath: "foo.csv"}, nil},
 		"underivable delim": {DelimitedFileConfig{Filepath: "foo.foo"}, nil, errors.New("could not derive delimiter from '.foo' extension")},
+		"defined header":    {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.', Header: "foo,bar,baz"}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv", Columns: []string{"foo", "bar", "baz"}}, nil},
+		"empty header":      {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.'}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv"}, nil},
 	}
 
 	equateErrorMessage := cmp.Comparer(func(x, y error) bool {

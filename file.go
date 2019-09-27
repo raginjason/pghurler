@@ -11,12 +11,14 @@ import (
 type DelimitedFile struct {
 	Delimiter rune
 	Filepath  string
+	Columns   []string
 }
 
 // DelimitedFileConfig struct
 type DelimitedFileConfig struct {
 	Delimiter rune
 	Filepath  string
+	Header    string
 }
 
 func parseHeader(delimiter rune, header string) ([]string, error) {
@@ -62,6 +64,14 @@ func NewDelimitedFile(conf DelimitedFileConfig) (*DelimitedFile, error) {
 			return nil, err
 		}
 	}
-	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath}
+	var columns []string
+	if conf.Header != "" {
+		var err error
+		columns, err = parseHeader(conf.Delimiter, conf.Header)
+		if err != nil {
+			return nil, err
+		}
+	}
+	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath, Columns: columns}
 	return f, nil
 }
