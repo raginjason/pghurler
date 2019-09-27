@@ -13,6 +13,12 @@ type DelimitedFile struct {
 	Filepath  string
 }
 
+// DelimitedFileConfig struct
+type DelimitedFileConfig struct {
+	Delimiter rune
+	Filepath  string
+}
+
 func parseHeader(delimiter rune, header string) ([]string, error) {
 	r := csv.NewReader(strings.NewReader(header))
 
@@ -26,25 +32,25 @@ func parseHeader(delimiter rune, header string) ([]string, error) {
 }
 
 // NewDelimitedFile func
-func NewDelimitedFile(path string, delimiter rune) (*DelimitedFile, error) {
+func NewDelimitedFile(conf DelimitedFileConfig) (*DelimitedFile, error) {
 	// If no delimiter is passed, derive it from the file extension
-	if delimiter == '\x00' { // Rune zero value
-		ext := filepath.Ext(path)
+	if conf.Delimiter == '\x00' { // Rune zero value
+		ext := filepath.Ext(conf.Filepath)
 		switch ext {
 		case ".csv":
-			delimiter = ','
+			conf.Delimiter = ','
 		case ".tsv":
-			delimiter = '\t'
+			conf.Delimiter = '\t'
 		case ".tab":
-			delimiter = '\t'
+			conf.Delimiter = '\t'
 		case ".pipe":
-			delimiter = '|'
+			conf.Delimiter = '|'
 		case "":
 			return nil, fmt.Errorf("no extension to derive delimiter from")
 		default:
 			return nil, fmt.Errorf("could not derive delimiter from '%s' extension", ext)
 		}
 	}
-	f := &DelimitedFile{Delimiter: delimiter, Filepath: path}
+	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath}
 	return f, nil
 }

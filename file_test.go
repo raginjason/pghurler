@@ -9,18 +9,17 @@ import (
 
 func TestNewDelimitedFile(t *testing.T) {
 	tests := map[string]struct {
-		path      string
-		delimiter rune
-		want      *DelimitedFile
-		err       error
+		conf DelimitedFileConfig
+		want *DelimitedFile
+		err  error
 	}{
-		"csv":  {"foo.csv", '\x00', &DelimitedFile{',', "foo.csv"}, nil},
-		"tsv":  {"foo.tsv", '\x00', &DelimitedFile{'\t', "foo.tsv"}, nil},
-		"tab":  {"foo.tab", '\x00', &DelimitedFile{'\t', "foo.tab"}, nil},
-		"pipe": {"foo.pipe", '\x00', &DelimitedFile{'|', "foo.pipe"}, nil},
+		"csv":  {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '\x00'}, &DelimitedFile{Delimiter: ',', Filepath: "foo.csv"}, nil},
+		"tsv":  {DelimitedFileConfig{Filepath: "foo.tsv", Delimiter: '\x00'}, &DelimitedFile{Delimiter: '\t', Filepath: "foo.tsv"}, nil},
+		"tab":  {DelimitedFileConfig{Filepath: "foo.tab", Delimiter: '\x00'}, &DelimitedFile{Delimiter: '\t', Filepath: "foo.tab"}, nil},
+		"pipe": {DelimitedFileConfig{Filepath: "foo.pipe", Delimiter: '\x00'}, &DelimitedFile{Delimiter: '|', Filepath: "foo.pipe"}, nil},
 
-		"no ext":      {"foo", '\x00', nil, errors.New("no extension to derive delimiter from")},
-		"unknown ext": {"foo.foo", '\x00', nil, errors.New("could not derive delimiter from '.foo' extension")},
+		"no ext":      {DelimitedFileConfig{Filepath: "foo", Delimiter: '\x00'}, nil, errors.New("no extension to derive delimiter from")},
+		"unknown ext": {DelimitedFileConfig{Filepath: "foo.foo", Delimiter: '\x00'}, nil, errors.New("could not derive delimiter from '.foo' extension")},
 	}
 
 	equateErrorMessage := cmp.Comparer(func(x, y error) bool {
@@ -32,14 +31,14 @@ func TestNewDelimitedFile(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			f, err := NewDelimitedFile(tc.path, tc.delimiter)
+			f, err := NewDelimitedFile(tc.conf)
 
 			if diff := cmp.Diff(tc.want, f); diff != "" {
-				t.Errorf("NewDelimitedFile(%s, %q) mismatch (-want +got):\n%s", tc.path, tc.delimiter, diff)
+				t.Errorf("NewDelimitedFile(%q) mismatch (-want +got):\n%s", tc.conf, diff)
 			}
 
 			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
-				t.Errorf("Error mismatch for NewDelimitedFile(%s, %q) (-want +got):\n%s", tc.path, tc.delimiter, diff)
+				t.Errorf("Error mismatch for NewDelimitedFile(%q) (-want +got):\n%s", tc.conf, diff)
 			}
 		})
 	}
