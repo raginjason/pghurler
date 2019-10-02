@@ -14,6 +14,7 @@ type DelimitedFile struct {
 	Delimiter rune
 	Filepath  string
 	Columns   []string
+	reader    *csv.Reader
 }
 
 // DelimitedFileConfig struct
@@ -79,6 +80,6 @@ func NewDelimitedFile(conf DelimitedFileConfig) (*DelimitedFile, error) {
 		return nil, err
 	}
 
-	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath, Columns: columns}
+	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath, Columns: columns, reader: r}
 	return f, nil
 }

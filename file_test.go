@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"io/ioutil"
 	"os"
 	"syscall"
@@ -96,11 +97,13 @@ func TestNewDelimitedFile(t *testing.T) {
 		return x.Error() == y.Error()
 	})
 
+	equateDelimitedFile := cmpopts.IgnoreUnexported(DelimitedFile{})
+
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			f, err := NewDelimitedFile(tc.conf)
 
-			if diff := cmp.Diff(tc.want, f); diff != "" {
+			if diff := cmp.Diff(tc.want, f, equateDelimitedFile); diff != "" {
 				t.Errorf("NewDelimitedFile(%q) mismatch (-want +got):\n%s", tc.conf, diff)
 			}
 
