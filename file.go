@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -19,18 +21,6 @@ type DelimitedFileConfig struct {
 	Delimiter rune
 	Filepath  string
 	Header    string
-}
-
-func parseHeader(delimiter rune, header string) ([]string, error) {
-	r := csv.NewReader(strings.NewReader(header))
-
-	record, err := r.Read()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return record, nil
 }
 
 func deriveDelimiter(path string) (rune, error) {
@@ -64,14 +54,31 @@ func NewDelimitedFile(conf DelimitedFileConfig) (*DelimitedFile, error) {
 			return nil, err
 		}
 	}
-	var columns []string
+
+	// If header is passed, wrap it with an io.Reader and squirrel it away for MultiReader
+	var readers []io.Reader
 	if conf.Header != "" {
-		var err error
-		columns, err = parseHeader(conf.Delimiter, conf.Header)
+		readers = append(readers, strings.NewReader(conf.Header+"\n"))
+	}
+
+	if conf.Filepath != "" {
+		file, err := os.Open(conf.Filepath)
 		if err != nil {
 			return nil, err
 		}
+		defer file.Close()
+		readers = append(readers, file)
 	}
+
+	// Create a csv.Reader and set it up
+	r := csv.NewReader(io.MultiReader(readers...))
+	r.Comma = conf.Delimiter
+
+	columns, err := r.Read()
+	if err != nil {
+		return nil, err
+	}
+
 	f := &DelimitedFile{Delimiter: conf.Delimiter, Filepath: conf.Filepath, Columns: columns}
 	return f, nil
 }

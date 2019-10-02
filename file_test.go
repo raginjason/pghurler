@@ -3,7 +3,9 @@ package main
 import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
-	"io"
+	"io/ioutil"
+	"os"
+	"syscall"
 	"testing"
 )
 
@@ -44,51 +46,47 @@ func TestDeriveDelimiter(t *testing.T) {
 	}
 }
 
-func TestParseHeader(t *testing.T) {
-	tests := map[string]struct {
-		delim  rune
-		header string
-		want   []string
-		err    error
-	}{
-		"csv":        {',', "foo,bar,baz", []string{"foo", "bar", "baz"}, nil},
-		"csv quotes": {',', `foo,"bar",baz`, []string{"foo", "bar", "baz"}, nil},
-		"empty":      {',', "", []string(nil), io.EOF},
-	}
-
-	equateErrorMessage := cmp.Comparer(func(x, y error) bool {
-		if x == nil || y == nil {
-			return x == nil && y == nil
-		}
-		return x.Error() == y.Error()
-	})
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			c, err := parseHeader(tc.delim, tc.header)
-
-			if diff := cmp.Diff(tc.want, c); diff != "" {
-				t.Errorf("parseHeader(%q, %s) mismatch (-want +got):\n%s", tc.delim, tc.header, diff)
-			}
-
-			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
-				t.Errorf("Error mismatch for parseHeader(%q, %s) (-want +got):\n%s", tc.delim, tc.header, diff)
-			}
-		})
-	}
-}
-
 func TestNewDelimitedFile(t *testing.T) {
+	var err error
+
+	var nonExistentCSVFile *os.File
+	nonExistentCSVFile, err = ioutil.TempFile("", "*.empty.csv")
+	if err != nil {
+		t.Errorf("failed to create non-existent csv temp file: %s", err)
+	}
+	nonExistentCSVFile.Close()
+	os.Remove(nonExistentCSVFile.Name()) // clean up
+
+	var emptyCSVFile *os.File
+	emptyCSVFile, err = ioutil.TempFile("", "*.empty.csv")
+	if err != nil {
+		t.Errorf("failed to create empty csv temp file: %s", err)
+	}
+	emptyCSVFile.Close()
+	defer os.Remove(emptyCSVFile.Name()) // clean up
+
+	var headerCSVFile *os.File
+	headerCSVFile, err = ioutil.TempFile("", "*.header.csv")
+	if _, err := headerCSVFile.Write([]byte("fcol1,fcol2,fcol3")); err != nil {
+		headerCSVFile.Close()
+	}
+	headerCSVFile.Close()
+	defer os.Remove(headerCSVFile.Name()) // clean up
+
 	tests := map[string]struct {
 		conf DelimitedFileConfig
 		want *DelimitedFile
 		err  error
 	}{
-		"defined delim":     {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.'}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv"}, nil},
-		"derivable delim":   {DelimitedFileConfig{Filepath: "foo.csv"}, &DelimitedFile{Delimiter: ',', Filepath: "foo.csv"}, nil},
-		"underivable delim": {DelimitedFileConfig{Filepath: "foo.foo"}, nil, errors.New("could not derive delimiter from '.foo' extension")},
-		"defined header":    {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.', Header: "foo,bar,baz"}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv", Columns: []string{"foo", "bar", "baz"}}, nil},
-		"empty header":      {DelimitedFileConfig{Filepath: "foo.csv", Delimiter: '.'}, &DelimitedFile{Delimiter: '.', Filepath: "foo.csv"}, nil},
+		"all empty":              {DelimitedFileConfig{}, nil, errors.New("no extension to derive delimiter from")},
+		"non-existent filepath":  {DelimitedFileConfig{Filepath: nonExistentCSVFile.Name()}, nil, &os.PathError{Op: "open", Path: nonExistentCSVFile.Name(), Err: syscall.Errno(0x02)}},
+		"derivable filepath":     {DelimitedFileConfig{Filepath: emptyCSVFile.Name()}, nil, errors.New("EOF")},
+		"underivable filepath":   {DelimitedFileConfig{Filepath: "*.foo.foo"}, nil, errors.New("could not derive delimiter from '.foo' extension")},
+		"arg header only":        {DelimitedFileConfig{Header: "col1,col2,col3"}, nil, errors.New("no extension to derive delimiter from")},
+		"delim only":             {DelimitedFileConfig{Delimiter: ','}, nil, errors.New("EOF")},
+		"header+delim":           {DelimitedFileConfig{Delimiter: ',', Header: "col1,col2,col3"}, &DelimitedFile{Delimiter: ',', Columns: []string{"col1", "col2", "col3"}}, nil},
+		"file header":            {DelimitedFileConfig{Filepath: headerCSVFile.Name(), Delimiter: ','}, &DelimitedFile{Filepath: headerCSVFile.Name(), Delimiter: ',', Columns: []string{"fcol1", "fcol2", "fcol3"}}, nil},
+		"file header+arg header": {DelimitedFileConfig{Filepath: headerCSVFile.Name(), Delimiter: ',', Header: "hcol1,hcol2,hcol3"}, &DelimitedFile{Filepath: headerCSVFile.Name(), Delimiter: ',', Columns: []string{"hcol1", "hcol2", "hcol3"}}, nil},
 	}
 
 	equateErrorMessage := cmp.Comparer(func(x, y error) bool {
