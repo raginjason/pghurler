@@ -47,8 +47,8 @@ func (r *Reader) Read() (*Record, error) {
 		values[v] = rec[i]
 	}
 
-	outRec := &Record{RecordNumber: r.currentRecord, LineNumber: r.currentLine, Values: values}
 	r.currentRecord++
 	r.currentLine++
+	outRec := &Record{RecordNumber: r.currentRecord, LineNumber: r.currentLine, Values: values}
 	return outRec, nil
 }
