@@ -16,33 +16,23 @@ func TestNewReader(t *testing.T) {
 
 	tests := map[string]struct {
 		reader *csv.Reader
-		opts   *ReaderOptions
 		want   *Reader
 		err    error
 	}{
-		"nil opts": {
-			csv.NewReader(strings.NewReader("col1,col2")),
-			nil,
-			&Reader{[]string{"col1", "col2"}, nil, 0, 0},
-			nil,
-		},
-		"opts with col": {
-			csv.NewReader(strings.NewReader("val1,val2")),
-			&ReaderOptions{[]string{"col1", "col2"}, 0},
-			&Reader{[]string{"col1", "col2"}, nil, 0, 0},
-			nil,
-		},
-		"empty csv opts with col": { // Negative test
+		"empty reader": {
 			csv.NewReader(strings.NewReader("")),
-			&ReaderOptions{[]string{"col1", "col2"}, 0},
-			&Reader{[]string{"col1", "col2"}, nil, 0, 0},
-			nil,
-		},
-		"empty csv": {
-			csv.NewReader(strings.NewReader("")),
-			nil,
 			nil,
 			errors.New("EOF"),
+		},
+		"header-only reader": {
+			csv.NewReader(strings.NewReader("col1,col2")),
+			&Reader{nil, 1, 0, []string{"col1", "col2"}},
+			nil,
+		},
+		"header and data reader": {
+			csv.NewReader(strings.NewReader("col1,col2\nval1,val2")),
+			&Reader{nil, 1, 0, []string{"col1", "col2"}},
+			nil,
 		},
 	}
 
@@ -55,7 +45,7 @@ func TestNewReader(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, err := NewReader(tc.reader, tc.opts)
+			r, err := NewReader(tc.reader)
 
 			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
 				t.Fatalf("Error mismatch for NewReader() (-want +got):\n%s", diff)
@@ -70,12 +60,12 @@ func TestNewReader(t *testing.T) {
 			}
 
 			if tc.want != nil && r != nil {
-				if diff := cmp.Diff(tc.want.lineNumber, r.lineNumber); diff != "" {
-					t.Errorf("NewReader() lineNumber mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(tc.want.currentLine, r.currentLine); diff != "" {
+					t.Errorf("NewReader() currentLine mismatch (-want +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(tc.want.recordNumber, r.recordNumber); diff != "" {
-					t.Errorf("NewReader() recordNumber mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(tc.want.currentRecord, r.currentRecord); diff != "" {
+					t.Errorf("NewReader() currentRecord mismatch (-want +got):\n%s", diff)
 				}
 
 				if diff := cmp.Diff(tc.want.columns, r.columns); diff != "" {
