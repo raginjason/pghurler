@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"errors"
 	"github.com/google/go-cmp/cmp"
+	"io"
 	"strings"
 	"testing"
 )
@@ -15,22 +16,22 @@ import (
 func TestNewReader(t *testing.T) {
 
 	tests := map[string]struct {
-		reader *csv.Reader
+		reader io.Reader
 		want   *Reader
 		err    error
 	}{
 		"empty reader": {
-			csv.NewReader(strings.NewReader("")),
+			strings.NewReader(""),
 			nil,
 			errors.New("EOF"),
 		},
 		"header-only reader": {
-			csv.NewReader(strings.NewReader("col1,col2")),
+			strings.NewReader("col1,col2"),
 			&Reader{nil, 1, 0, []string{"col1", "col2"}},
 			nil,
 		},
 		"header and data reader": {
-			csv.NewReader(strings.NewReader("col1,col2\nval1,val2")),
+			strings.NewReader("col1,col2\nval1,val2"),
 			&Reader{nil, 1, 0, []string{"col1", "col2"}},
 			nil,
 		},
@@ -45,7 +46,7 @@ func TestNewReader(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			r, err := NewReader(tc.reader)
+			r, err := NewReader(csv.NewReader(tc.reader))
 
 			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
 				t.Fatalf("Error mismatch for NewReader() (-want +got):\n%s", diff)
