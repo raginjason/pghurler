@@ -17,6 +17,7 @@ const (
 	emptyString      = ""
 	headerString     = "col1,col2"
 	headerDataString = "col1,col2\nval1,val2"
+	dataString       = "val1,val2"
 )
 
 func TestNewReader(t *testing.T) {
@@ -147,3 +148,39 @@ func TestRead(t *testing.T) {
 		})
 	}
 }
+
+func benchmarkRead(header string, data string, recCount int, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		var bld strings.Builder
+		var records []*Record
+		b.StopTimer()
+
+		bld.WriteString(header + "\n")
+		for i := 0; i < recCount; i++ {
+			bld.WriteString(data + "\n")
+		}
+
+		r, err := NewReader(csv.NewReader(strings.NewReader(bld.String())))
+		if err != nil {
+			b.Errorf("failed to create reader: %s", err)
+		}
+
+		b.StartTimer()
+
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				b.Errorf("failed reading from stream: %s", err)
+			}
+			records = append(records, record)
+		}
+	}
+}
+
+func BenchmarkRead_1(b *testing.B)    { benchmarkRead(headerString, dataString, 1, b) }
+func BenchmarkRead_10(b *testing.B)   { benchmarkRead(headerString, dataString, 10, b) }
+func BenchmarkRead_100(b *testing.B)  { benchmarkRead(headerString, dataString, 100, b) }
+func BenchmarkRead_1000(b *testing.B) { benchmarkRead(headerString, dataString, 1000, b) }
