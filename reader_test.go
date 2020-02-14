@@ -152,6 +152,68 @@ func TestRead(t *testing.T) {
 	}
 }
 
+func TestReadAll(t *testing.T) {
+
+	tests := map[string]struct {
+		reader io.Reader
+		want   []*Record
+		err    error
+	}{
+		"zero record reader": {
+			strings.NewReader(headerString),
+			nil,
+			nil,
+		},
+		"one record reader": {
+			strings.NewReader(headerDataString),
+			[]*Record{
+				{2, 1, map[string]string{"col1": "val1", "col2": "val2"}},
+			},
+			nil,
+		},
+		"two record reader": {
+			strings.NewReader(headerDataString + "\n" + dataString),
+			[]*Record{
+				{2, 1, map[string]string{"col1": "val1", "col2": "val2"}},
+				{3, 2, map[string]string{"col1": "val1", "col2": "val2"}},
+			},
+			nil,
+		},
+	}
+
+	equateErrorMessage := cmp.Comparer(func(x, y error) bool {
+		if x == nil || y == nil {
+			return x == nil && y == nil
+		}
+		return x.Error() == y.Error()
+	})
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			r, err := NewReader(csv.NewReader(tc.reader))
+			recs, err := r.ReadAll()
+
+			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
+				t.Fatalf("Error mismatch for ReadAll() (-want +got):\n%s", diff)
+			}
+
+			if recs == nil && tc.want != nil {
+				t.Fatalf("ReadAll() returned nil when it should not be")
+			}
+
+			if recs != nil && tc.want == nil {
+				t.Fatalf("ReadAll() return something when it should be nil")
+			}
+
+			if tc.want != nil && recs != nil {
+				if diff := cmp.Diff(tc.want, recs); diff != "" {
+					t.Errorf("ReadAll() Records mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
 func benchmarkRead(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var bld strings.Builder
@@ -186,3 +248,32 @@ func BenchmarkRead_1(b *testing.B)    { benchmarkRead(headerString, dataString, 
 func BenchmarkRead_10(b *testing.B)   { benchmarkRead(headerString, dataString, 10, b) }
 func BenchmarkRead_100(b *testing.B)  { benchmarkRead(headerString, dataString, 100, b) }
 func BenchmarkRead_1000(b *testing.B) { benchmarkRead(headerString, dataString, 1000, b) }
+
+func benchmarkReadAll(header string, data string, recCount int, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		var bld strings.Builder
+		b.StopTimer()
+
+		bld.WriteString(header + "\n")
+		for i := 0; i < recCount; i++ {
+			bld.WriteString(data + "\n")
+		}
+
+		r, err := NewReader(csv.NewReader(strings.NewReader(bld.String())))
+		if err != nil {
+			b.Errorf("failed to create reader: %s", err)
+		}
+
+		b.StartTimer()
+
+		records, err = r.ReadAll()
+		if err != nil {
+			b.Errorf("failure calling ReadAll(): %s", err)
+		}
+	}
+}
+
+func BenchmarkReadAll_1(b *testing.B)    { benchmarkReadAll(headerString, dataString, 1, b) }
+func BenchmarkReadAll_10(b *testing.B)   { benchmarkReadAll(headerString, dataString, 10, b) }
+func BenchmarkReadAll_100(b *testing.B)  { benchmarkReadAll(headerString, dataString, 100, b) }
+func BenchmarkReadAll_1000(b *testing.B) { benchmarkReadAll(headerString, dataString, 1000, b) }

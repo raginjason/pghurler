@@ -6,6 +6,7 @@ package main
 
 import (
 	"encoding/csv"
+	"io"
 )
 
 type Reader struct {
@@ -51,4 +52,17 @@ func (r *Reader) Read() (*Record, error) {
 	r.currentLine++
 	outRec := &Record{RecordNumber: r.currentRecord, LineNumber: r.currentLine, Values: values}
 	return outRec, nil
+}
+
+func (r *Reader) ReadAll() (records []*Record, err error) {
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			return records, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, record)
+	}
 }
