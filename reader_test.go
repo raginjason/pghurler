@@ -124,7 +124,7 @@ func TestRead(t *testing.T) {
 			rec, err := r.Read()
 
 			if diff := cmp.Diff(tc.err, err, equateErrorMessage); diff != "" {
-				t.Fatalf("Error mismatch for Reader() (-want +got):\n%s", diff)
+				t.Fatalf("Error mismatch for Read() (-want +got):\n%s", diff)
 			}
 
 			if rec == nil && tc.want != nil {
