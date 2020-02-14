@@ -20,6 +20,9 @@ const (
 	dataString       = "val1,val2"
 )
 
+// To avoid having the compiler optimize out benchmarks
+var records []*Record
+
 func TestNewReader(t *testing.T) {
 
 	tests := map[string]struct {
@@ -152,7 +155,6 @@ func TestRead(t *testing.T) {
 func benchmarkRead(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var bld strings.Builder
-		var records []*Record
 		b.StopTimer()
 
 		bld.WriteString(header + "\n")
