@@ -226,7 +226,7 @@ func generateCSVReader(header string, data string, recCount int) *csv.Reader {
 	return csv.NewReader(strings.NewReader(bld.String()))
 }
 
-func benchmarkRead(header string, data string, recCount int, b *testing.B) {
+func benchmarkReadComplete(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		b.StopTimer()
 
@@ -250,10 +250,12 @@ func benchmarkRead(header string, data string, recCount int, b *testing.B) {
 	}
 }
 
-func BenchmarkRead_1(b *testing.B)    { benchmarkRead(headerString, dataString, 1, b) }
-func BenchmarkRead_10(b *testing.B)   { benchmarkRead(headerString, dataString, 10, b) }
-func BenchmarkRead_100(b *testing.B)  { benchmarkRead(headerString, dataString, 100, b) }
-func BenchmarkRead_1000(b *testing.B) { benchmarkRead(headerString, dataString, 1000, b) }
+func BenchmarkReadComplete_1(b *testing.B)   { benchmarkReadComplete(headerString, dataString, 1, b) }
+func BenchmarkReadComplete_10(b *testing.B)  { benchmarkReadComplete(headerString, dataString, 10, b) }
+func BenchmarkReadComplete_100(b *testing.B) { benchmarkReadComplete(headerString, dataString, 100, b) }
+func BenchmarkReadComplete_1000(b *testing.B) {
+	benchmarkReadComplete(headerString, dataString, 1000, b)
+}
 
 func benchmarkCSVReadAll(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
