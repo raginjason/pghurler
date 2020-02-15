@@ -267,6 +267,40 @@ func benchmarkRead(header string, data string, recCount int, b *testing.B) {
 
 func BenchmarkRead(b *testing.B) { benchmarkRead(headerString, dataString, 1, b) }
 
+func benchmarkCSVReadComplete(header string, data string, recCount int, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		b.StopTimer()
+
+		r := generateCSVReader(header, data, recCount)
+
+		b.StartTimer()
+
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				b.Errorf("failed reading from stream: %s", err)
+			}
+			csvRecords = append(csvRecords, record)
+		}
+	}
+}
+
+func BenchmarkCSVReadComplete_1(b *testing.B) {
+	benchmarkCSVReadComplete(headerString, dataString, 1, b)
+}
+func BenchmarkCSVReadComplete_10(b *testing.B) {
+	benchmarkCSVReadComplete(headerString, dataString, 10, b)
+}
+func BenchmarkCSVReadComplete_100(b *testing.B) {
+	benchmarkCSVReadComplete(headerString, dataString, 100, b)
+}
+func BenchmarkCSVReadComplete_1000(b *testing.B) {
+	benchmarkCSVReadComplete(headerString, dataString, 1000, b)
+}
+
 func benchmarkReadComplete(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		b.StopTimer()
