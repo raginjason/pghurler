@@ -105,7 +105,7 @@ func TestRead(t *testing.T) {
 			nil,
 		},
 		"two record reader": {
-			strings.NewReader(headerDataString),
+			strings.NewReader(headerDataString + "\n" + dataString),
 			&Record{2, 1, map[string]string{"col1": "val1", "col2": "val2"}},
 			nil,
 		},
