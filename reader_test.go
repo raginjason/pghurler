@@ -214,17 +214,22 @@ func TestReadAll(t *testing.T) {
 	}
 }
 
+func generateCSVReader(header string, data string, recCount int) *csv.Reader {
+	var bld strings.Builder
+
+	bld.WriteString(header + "\n")
+	for i := 0; i < recCount; i++ {
+		bld.WriteString(data + "\n")
+	}
+
+	return csv.NewReader(strings.NewReader(bld.String()))
+}
+
 func benchmarkRead(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		var bld strings.Builder
 		b.StopTimer()
 
-		bld.WriteString(header + "\n")
-		for i := 0; i < recCount; i++ {
-			bld.WriteString(data + "\n")
-		}
-
-		r, err := NewReader(csv.NewReader(strings.NewReader(bld.String())))
+		r, err := NewReader(generateCSVReader(header, data, recCount))
 		if err != nil {
 			b.Errorf("failed to create reader: %s", err)
 		}
@@ -251,15 +256,9 @@ func BenchmarkRead_1000(b *testing.B) { benchmarkRead(headerString, dataString, 
 
 func benchmarkReadAll(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		var bld strings.Builder
 		b.StopTimer()
 
-		bld.WriteString(header + "\n")
-		for i := 0; i < recCount; i++ {
-			bld.WriteString(data + "\n")
-		}
-
-		r, err := NewReader(csv.NewReader(strings.NewReader(bld.String())))
+		r, err := NewReader(generateCSVReader(header, data, recCount))
 		if err != nil {
 			b.Errorf("failed to create reader: %s", err)
 		}
