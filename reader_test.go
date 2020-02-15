@@ -21,7 +21,9 @@ const (
 )
 
 // To avoid having the compiler optimize out benchmarks
+var record *Record
 var records []*Record
+var csvRecord []string
 var csvRecords [][]string
 
 func TestNewReader(t *testing.T) {
@@ -225,6 +227,45 @@ func generateCSVReader(header string, data string, recCount int) *csv.Reader {
 
 	return csv.NewReader(strings.NewReader(bld.String()))
 }
+
+func benchmarkCSVRead(header string, data string, recCount int, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		b.StopTimer()
+
+		var err error
+
+		r := generateCSVReader(header, data, recCount)
+
+		b.StartTimer()
+
+		csvRecord, err = r.Read()
+		if err != nil {
+			b.Errorf("failure calling csv.Read(): %s", err)
+		}
+	}
+}
+
+func BenchmarkCSVRead(b *testing.B) { benchmarkCSVRead(headerString, dataString, 1, b) }
+
+func benchmarkRead(header string, data string, recCount int, b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		b.StopTimer()
+
+		r, err := NewReader(generateCSVReader(header, data, recCount))
+		if err != nil {
+			b.Errorf("failed to create reader: %s", err)
+		}
+
+		b.StartTimer()
+
+		record, err = r.Read()
+		if err != nil {
+			b.Errorf("failure calling ReadAll(): %s", err)
+		}
+	}
+}
+
+func BenchmarkRead(b *testing.B) { benchmarkRead(headerString, dataString, 1, b) }
 
 func benchmarkReadComplete(header string, data string, recCount int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
